@@ -1,1 +1,0 @@
-/Users/halvorboe/Desktop/P_NP_26_04/httimple.rs/target/rls/debug/libhttimple.rmeta: /Users/halvorboe/Desktop/P_NP_26_04/httimple.rs/src/main.rs /Users/halvorboe/Desktop/P_NP_26_04/httimple.rs/src/lib.rs
