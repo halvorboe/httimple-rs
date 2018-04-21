@@ -13,3 +13,4 @@ hyper = "*"
 tokio-service = "*"
 tokio-tls = { version = "*", features = ["tokio-proto"] }
 bytes = "*"
+bitreader = "*"
