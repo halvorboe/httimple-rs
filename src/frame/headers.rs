@@ -1,12 +1,13 @@
-use hpack::Decoder;
-
+use hpack::{Decoder, Encoder};
+use std::collections::HashMap;
+use util;
 use frame::HEADERS;
 use frame::head::Head;
 
 #[derive(Debug)]
 pub struct Headers {
     head: Head,
-    inner: String
+    inner: HashMap<String, String>
 }
 
 impl Headers {
@@ -20,22 +21,30 @@ impl Headers {
         if head.has_flag(5) {
             cursor += 5;
         }
-        let mut decoder = Decoder::new();
 
-        decoder.decode_with_cb(&buf[cursor..], |name, value| {
-            let n = String::from_utf8(name.to_vec()).unwrap();
-            let v = String::from_utf8(value.to_vec()).unwrap();
-            println!("{:?} -> {:?}", n, v);
-        });
+        let inner = util::parse_header_block_fragment(&buf[cursor..]);
 
-        // let data = String::from_utf8(buf).unwrap(); 
-        Headers { head: head, inner: String::from("")}
+        Headers { head: head, inner: inner}
+    }
+
+    pub fn insert(&mut self, name: String, value: String) {
+        self.inner.insert(name, value);
     }
 
     // Generates settings frame with default settings and
     pub fn new(stream_id: u32) -> Headers {
-        let data = String::from("");
-        Headers { head: Head { length: data.len() as u32, kind: HEADERS, flags: 0, stream_id: stream_id }, inner: data }
+        let data = HashMap::new();
+        Headers { head: Head { length: 0, kind: HEADERS, flags: 0, stream_id: stream_id }, inner: data }
+    }
+
+    pub fn as_bytes(&mut self) -> Vec<u8> {
+        let mut data = util::create_header_block_fragment(self.inner.clone()); 
+        self.head.set_length(data.len() as u32);
+        self.head.set_flag(2);
+        let mut head = self.head.as_bytes();
+        head.append(&mut data);
+        println!("{:?}", self);
+        head
     }
 }
 

@@ -17,7 +17,7 @@ pub struct Setting {
 
 #[derive(Debug)]
 pub struct Settings {
-    head: Head,
+    pub head: Head,
     inner: Vec<Setting>
 }
 

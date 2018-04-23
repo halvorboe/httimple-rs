@@ -1,7 +1,7 @@
 
 use bitreader::BitReader;
 use bytes::Bytes; 
-use frame::util;
+use util;
 
 // Map number to type
 
@@ -51,6 +51,14 @@ impl Head {
         }
     } 
 
+    pub fn set_flag(&mut self, index: u8) {
+        self.flags += 1 << (7 - index);
+    } 
+
+    pub fn set_length(&mut self, length: u32) {
+        self.length = length;
+    }
+
 }
 
 #[test] 
@@ -73,6 +81,14 @@ fn head_has_flag() {
 fn head_to_bytes() {
     let head = Head { length: 0, kind: 0, flags: 0, stream_id: 0 };
     assert_eq!(9, head.as_bytes().len());
+}
+
+#[test] 
+fn head_set_flag() {
+    let mut head = Head { length: 0, kind: 0, flags: 0, stream_id: 0 };
+    head.set_flag(0);
+    assert_eq!(head.has_flag(0), true);
+    assert_eq!(head.has_flag(1), false);
 }
 
 impl From<Vec<u8>> for Head {

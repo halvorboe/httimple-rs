@@ -11,6 +11,7 @@ mod config;
 mod connection;
 mod server;
 mod session;
+mod util;
 
 use mio::tcp::{TcpListener};
 

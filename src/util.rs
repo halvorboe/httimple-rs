@@ -1,5 +1,6 @@
 use frame::{DATA, HEADERS, PRIORITY, RST_STREAM, SETTINGS, PING, GOAWAY, WINDOW_UPDATE, CONTINUATION};
-
+use std::collections::HashMap;
+use hpack::{Decoder, Encoder};
 
 pub fn pow(n: u32, t: u32) -> u32 {
     if t == 0 {
@@ -94,4 +95,34 @@ pub fn get_type(i: u8) -> String {
        }
    };
    String::from(r)
+}
+
+
+pub fn parse_header_block_fragment(buf: &[u8]) -> HashMap<String, String> {
+    let mut decoder = Decoder::new();
+
+    let mut inner = HashMap::new();
+
+    match decoder.decode_with_cb(buf, |name, value| {
+        let n = String::from_utf8_lossy(&name).into_owned();
+        let v = String::from_utf8_lossy(&value).into_owned();
+        inner.insert(n, v);
+    }) {
+        Err(err) => println!("{:?}", err),
+        Ok(ok) => {}
+    }
+
+    inner
+} 
+
+
+pub fn create_header_block_fragment(headers: HashMap<String, String>) -> Vec<u8> {
+    let mut temp = Vec::new();
+    for (name, value) in &headers {
+        temp.push((name.as_bytes(), value.as_bytes()).clone());
+    }
+    let mut encoder = Encoder::new();
+    let e = encoder.encode(temp);
+    println!("e -----> {:?}", e);
+    e
 }

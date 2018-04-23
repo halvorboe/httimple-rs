@@ -10,8 +10,11 @@ use session;
 use proto;
 use codec;
 use frame::Frame;
+use frame::headers::Headers;
 
 use frame::head::Head;
+use frame::data::Data;
+use frame::settings::Settings;
 
 pub struct Connection {
     socket: TcpStream,
@@ -187,17 +190,46 @@ impl Connection {
             .unwrap();
     } 
 
+    fn send_settings_a(&mut self) {
+        let head = Head {
+            length: 0,
+            kind: 4,
+            flags: 1,
+            stream_id: 0, 
+        };
+        self.tls_session
+            .write_all(&head.as_bytes())
+            .unwrap();
+    } 
+
+    fn send_response(&mut self) {
+        let mut headers = Headers::new(7);
+        headers.insert(String::from(":status"), String::from("200"));
+        headers.insert(String::from("content-length"), String::from("13"));
+        println!("{:?}", headers.as_bytes());
+        let mut data = headers.as_bytes();
+        let mut d = Data::new();
+        data.append(&mut d.as_bytes());
+        self.tls_session.write_all(&data.clone());
+    }
+
     fn print_result(&self, frames: Vec<Frame>) {
         println!("-- [RESULT] ✅ ----------------");
+        let mut unknown = 0;
         for frame in frames {
             match frame {
-                Frame::Unknown(frame) => {},
+                Frame::Unknown(frame) => {
+                    println!("[Unknown]");
+                },
                 _ => {
                     println!("{:?}", frame);
                 }
+
             };
+            println!("------------------------------");
             
         }
+
     }
 
     /// Process some amount of received plaintext.
@@ -205,12 +237,15 @@ impl Connection {
         if self.h2_session.is_accepted() {
             let frames = codec::parse_frames_from_buffer(&buf);
             self.print_result(frames);
+            self.send_settings_a();
+            self.send_response();
         } else {
             if proto::handshake(buf) {  
                 self.h2_session.accept();
                 let frames = codec::parse_frames_from_buffer(&buf[24..]);
                 self.print_result(frames);
                 self.send_settings();
+                self.send_settings_a();
             }
         }
 
@@ -219,13 +254,10 @@ impl Connection {
 
     // pub fn send_http_response_once(&mut self) {
     //     let response = b"HTTP/1.0 200 OK\r\nConnection: close\r\n\r\nHello world from rustls tlsserver\r\n";
-    //     if !self.sent_http_response {
-    //         self.tls_session
-    //             .write_all(response)
-    //             .unwrap();
-    //         self.sent_http_response = true;
-    //         self.tls_session.send_close_notify();
-    //     }
+    //     self.tls_session
+    //         .write_all(response)
+    //         .unwrap();
+    //     self.tls_session.send_close_notify();
     // }
 
     pub fn do_tls_write(&mut self) {
