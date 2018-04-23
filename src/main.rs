@@ -1,63 +1,67 @@
-extern crate tokio_proto;
-extern crate tokio_core;
-extern crate tokio_io;
-extern crate futures;
-extern crate tokio_service;
 extern crate bytes;
-extern crate native_tls;
-extern crate tokio_tls;
+extern crate mio;
 extern crate bitreader;
+extern crate hpack;
+extern crate rustls;
 
 mod proto;
 mod codec;
 mod frame; 
+mod config;
+mod connection;
+mod server;
+mod session;
 
-use std::io;
+use mio::tcp::{TcpListener};
 
-use proto::Proto;
-
-use futures::future;
-use futures::future::FutureResult;
-use tokio_proto::TcpServer;
-use tokio_service::Service;
-use futures::future::{ok, Future};
-use native_tls::{TlsAcceptor, Pkcs12};
+use std::fs;
+use std::net;
 
 
+use server::Server;
 
-struct Hello;
+// Token for our listening socket.
+const LISTENER: mio::Token = mio::Token(0);
 
-impl Service for Hello {
-    type Request = Vec<u8>;
-    type Response = Vec<u8>;
-    type Error = io::Error;
-    type Future = FutureResult<Self::Response, Self::Error>;
+fn main() {
 
-    fn call(&self, req: Self::Request) -> Self::Future { 
-        let line = String::from_utf8(req.clone());
-        match line {
-            Ok(msg) => {
-                println!("[R] {}", msg)
-            },
-            Err(err) => {
-                println!("[Error] {}", err)
+    let mut addr: net::SocketAddr = "0.0.0.0:3000".parse().unwrap();
+    addr.set_port(3000);
+
+    let config = config::make_config();
+
+    let listener = TcpListener::bind(&addr).expect("cannot listen on port");
+    let mut poll = mio::Poll::new()
+        .unwrap();
+    poll.register(&listener,
+                  LISTENER,
+                  mio::Ready::readable(),
+                  mio::PollOpt::level())
+        .unwrap();
+
+    println!("Starting server");
+    let mut tlsserv = Server::new(listener, config);
+
+    let mut events = mio::Events::with_capacity(256);
+
+    let mut count = 0;
+
+    loop {
+        poll.poll(&mut events, None).unwrap();
+
+        for event in events.iter() {
+            match event.token() {
+                LISTENER => {
+                    count += 1;
+                    println!("[CONNECTION] {}", count);
+                    if !tlsserv.accept(&mut poll) {
+                        break;
+                    }
+                }
+                _ => {
+                    tlsserv.conn_event(&mut poll, &event)
+                }
             }
         }
-        future::ok(req)
     }
-}
-
-
-pub fn main() {
-    // let der = include_bytes!(".cert/identity.p12");
-    // let cert = Pkcs12::from_der(der, "mypass").unwrap();
-    // let tls_cx = TlsAcceptor::builder(cert).unwrap()
-    //                         .build().unwrap();
-
-    // let protocol = tokio_tls::proto::Server::new(Proto, tls_cx);
-
-    let addr = "127.0.0.1:1337".parse().unwrap();
-    let srv = TcpServer::new(Proto, addr);
-    println!("Listening on {}", addr);
-    srv.serve(|| Ok(Hello));
 }

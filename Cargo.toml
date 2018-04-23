@@ -4,13 +4,9 @@ version = "0.1.0"
 authors = ["Mona Lisa <halvor98@outlook.com>"]
 
 [dependencies]
-futures = "0.1.11"
-native-tls = "0.1"
-tokio-core = "0.1.6"
-tokio-io = "0.1"
-tokio-proto = "0.1"
-hyper = "*"
-tokio-service = "*"
-tokio-tls = { version = "*", features = ["tokio-proto"] }
+
 bytes = "*"
 bitreader = "*"
+mio = "*"
+rustls = "*"
+hpack = "*"

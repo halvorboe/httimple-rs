@@ -1,7 +1,7 @@
+use frame::{DATA, HEADERS, PRIORITY, RST_STREAM, SETTINGS, PING, GOAWAY, WINDOW_UPDATE, CONTINUATION};
 
 
-
-fn pow(n: u32, t: u32) -> u32 {
+pub fn pow(n: u32, t: u32) -> u32 {
     if t == 0 {
         1
     } else {
@@ -24,19 +24,26 @@ fn do_pow() {
 const PAD : &str = "0";
 
 pub fn pad(s : String, len : usize) -> String{
-    let i = len - s.len();
-    let mut t = String::new();
-    for _ in 0..i {
-        t.push_str(PAD);
+    if s.len() < len {
+        let i = len - s.len();
+        let mut t = String::new();
+        for _ in 0..i {
+            t.push_str(PAD);
+        }
+        t.push_str(&s);
+        t
+    } else {
+        s
     }
-    t.push_str(&s);
-    t
 } 
 
 #[test]
 fn do_pad() {
     let mut s = String::from("1");
     let t = String::from("0001");
+    assert_eq!(t, pad(s, 4));
+    let mut s = String::from("1111");
+    let t = String::from("1111");
     assert_eq!(t, pad(s, 4));
 }
 
@@ -68,4 +75,23 @@ fn do_bin_to_vec() {
     let t = String::from("11111111");
     let v = bin_to_vec(t);
     assert_eq!(255, v[0]);
+}
+
+
+pub fn get_type(i: u8) -> String {
+   let r = {
+       match i {
+           DATA => "DATA",
+           HEADERS => "HEADERS",
+           PRIORITY => "PRIORITY",
+           RST_STREAM => "RST_STREAM",
+           SETTINGS => "SETTINGS",
+           PING => "PING",
+           GOAWAY => "GOAWAY",
+           WINDOW_UPDATE => "WINDOW_UPDATE",
+           CONTINUATION => "CONTINUATION",
+           _ => "UNKNOWN"
+       }
+   };
+   String::from(r)
 }
