@@ -1,5 +1,5 @@
-use frame::{SETTINGS, Size};
-use frame::Head;
+use proto::frame::{SETTINGS, Size};
+use proto::frame::Head;
 use bitreader::BitReader;
 
 

@@ -9,6 +9,6 @@ bytes = "*"
 bitreader = "*"
 mio = "*"
 rustls = "*"
-hpack = "*"
+hpack_codec = "*"
 
 

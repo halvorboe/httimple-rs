@@ -1,7 +1,11 @@
 
 
-use frame::head::Head;
+use proto::frame::head::Head;
 use bitreader::BitReader;
+
+// Debug only 
+use std::io::prelude::*;
+use std::fs::File;
 
 #[derive(Debug)]
 pub struct Data {
@@ -26,12 +30,15 @@ impl Data {
         Data { head: head, inner: data }
     }
 
-    pub fn new() -> Data {
+    pub fn new(stream_id: u32) -> Data {
+        let mut f = File::open("index.html").unwrap();
+        let mut buffer = String::new();
+        f.read_to_string(&mut buffer).unwrap();
         Data { 
-            head: Head { length: 0, kind: 0, flags: 0, stream_id: 7
+            head: Head { length: 0, kind: 0, flags: 0, stream_id: stream_id
             },
             inner: {
-                vec![24, 23, 23, 23, 23, 26, 45, 45, 23, 12, 11, 12, 23]
+                buffer.as_bytes().to_vec()
             }
         }
     } 
@@ -40,10 +47,10 @@ impl Data {
         self.head.set_length(self.inner.len() as u32);
         self.head.set_flag(0);
         let mut head = self.head.as_bytes();
-        println!("{:?}", self.inner);
+        //println!("{:?}", self.inner);
         head.append(&mut self.inner);
         println!("{:?}", self);
-        println!("{:?}", head);
+        //println!("{:?}", head);
         head
     }
     

@@ -1,7 +1,7 @@
 
 use bitreader::BitReader;
 use bytes::Bytes; 
-use util;
+use proto::util;
 
 // Map number to type
 
@@ -15,27 +15,17 @@ pub struct Head {
 
 impl Head {
     pub fn as_bytes(&self) -> Vec<u8> {
-        let mut string = String::from("");
-        // Add length
-        string.push_str(
-            &util::pad(format!("{:b}", self.length), 24)
-        );
-        // Add kind
-        string.push_str(
-            &util::pad(format!("{:b}", self.kind), 8)
-        );
-        // Add kind
-        string.push_str(
-            &util::pad(format!("{:b}", self.flags), 8)
-        );
-        // Reserved bit
-        string.push_str("0");
-        // Add kind        
-        string.push_str(
-            &util::pad(format!("{:b}", self.stream_id), 31)
-        );
-        println!("L: {} R: {}", string.len(), string);
-        util::bin_to_vec(string) 
+        vec![
+            (((self.length >> 16) & 0x000000FF) as u8),
+            (((self.length >>  8) & 0x000000FF) as u8),
+            (((self.length      ) & 0x000000FF) as u8),
+            self.kind,
+            self.flags,
+            (((self.stream_id >> 24) & 0x000000FF) as u8),
+            (((self.stream_id >> 16) & 0x000000FF) as u8),
+            (((self.stream_id >>  8) & 0x000000FF) as u8),
+            (((self.stream_id ) & 0x000000FF) as u8)
+        ]
     }
 
     pub fn clone(&self) -> Head {
@@ -44,7 +34,7 @@ impl Head {
 
     pub fn has_flag(&self, index: u8) -> bool {
         if index < 8 {
-            let filter = (1 << (7 - index));
+            let filter = (1 << index);
             (filter  & self.flags) != 0
         } else {
             false
@@ -52,7 +42,7 @@ impl Head {
     } 
 
     pub fn set_flag(&mut self, index: u8) {
-        self.flags += 1 << (7 - index);
+        self.flags += 1 << index;
     } 
 
     pub fn set_length(&mut self, length: u32) {
@@ -63,16 +53,16 @@ impl Head {
 
 #[test] 
 fn head_has_flag() {
-    let head = Head { length: 0, kind: 0, flags: 128, stream_id: 0 };
+    let head = Head { length: 0, kind: 0, flags: 1, stream_id: 0 };
     assert_eq!(head.has_flag(0), true);
     assert_eq!(head.has_flag(1), false);
-    let head = Head { length: 0, kind: 0, flags: 64, stream_id: 0 };
+    let head = Head { length: 0, kind: 0, flags: 2, stream_id: 0 };
     assert_eq!(head.has_flag(1), true);
     assert_eq!(head.has_flag(2), false);
-    let head = Head { length: 0, kind: 0, flags: 32, stream_id: 0 };
+    let head = Head { length: 0, kind: 0, flags: 4, stream_id: 0 };
     assert_eq!(head.has_flag(2), true);
     assert_eq!(head.has_flag(3), false);
-    let head = Head { length: 0, kind: 0, flags: 1, stream_id: 0 };
+    let head = Head { length: 0, kind: 0, flags: 128, stream_id: 0 };
     assert_eq!(head.has_flag(7), true);
     assert_eq!(head.has_flag(6), false);
 }

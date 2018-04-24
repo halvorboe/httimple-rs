@@ -1,5 +1,5 @@
-use frame::head::Head;
-use util;
+use proto::frame::head::Head;
+use proto::util;
 
 use std::collections::HashMap;
 

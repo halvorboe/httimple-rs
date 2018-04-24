@@ -1,8 +1,8 @@
-use hpack::{Decoder, Encoder};
+
 use std::collections::HashMap;
-use util;
-use frame::HEADERS;
-use frame::head::Head;
+use proto::util;
+use proto::frame::HEADERS;
+use proto::frame::head::Head;
 
 #[derive(Debug)]
 pub struct Headers {
@@ -39,7 +39,9 @@ impl Headers {
 
     pub fn as_bytes(&mut self) -> Vec<u8> {
         let mut data = util::create_header_block_fragment(self.inner.clone()); 
+        println!("{:?}", util::parse_header_block_fragment(&data));
         self.head.set_length(data.len() as u32);
+        //self.head.set_flag(0);
         self.head.set_flag(2);
         let mut head = self.head.as_bytes();
         head.append(&mut data);

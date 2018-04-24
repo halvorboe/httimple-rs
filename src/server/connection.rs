@@ -6,15 +6,15 @@ use std::io;
 use std::io::{Read, Write};
 use std::collections::HashMap;
 
-use session;
+use proto::session;
 use proto;
-use codec;
-use frame::Frame;
-use frame::headers::Headers;
+use proto::codec;
+use proto::frame::Frame;
+use proto::frame::headers::Headers;
 
-use frame::head::Head;
-use frame::data::Data;
-use frame::settings::Settings;
+use proto::frame::head::Head;
+use proto::frame::data::Data;
+use proto::frame::settings::Settings;
 
 pub struct Connection {
     socket: TcpStream,
@@ -179,38 +179,32 @@ impl Connection {
     }
 
     fn send_settings(&mut self) {
-        let head = Head {
-            length: 0,
-            kind: 4,
-            flags: 0,
-            stream_id: 0, 
-        };
-        self.tls_session
-            .write_all(&head.as_bytes())
-            .unwrap();
+        self.send_settings_frame(0);
     } 
 
     fn send_settings_a(&mut self) {
+        self.send_settings_frame(1);
+    } 
+
+    fn send_settings_frame(&mut self, flag: u8) {
         let head = Head {
             length: 0,
             kind: 4,
-            flags: 1,
+            flags: flag,
             stream_id: 0, 
         };
-        self.tls_session
+        let w = self.tls_session
             .write_all(&head.as_bytes())
             .unwrap();
-    } 
+        println!("SENT SETTINGS {:?}", w);
+    }
+
 
     fn send_response(&mut self) {
-        let mut headers = Headers::new(7);
-        headers.insert(String::from(":status"), String::from("200"));
-        headers.insert(String::from("content-length"), String::from("13"));
-        println!("{:?}", headers.as_bytes());
-        let mut data = headers.as_bytes();
-        let mut d = Data::new();
-        data.append(&mut d.as_bytes());
-        self.tls_session.write_all(&data.clone());
+        let mut headers = Headers::new(1);
+        self.tls_session.write_all(&headers.as_bytes());
+        let mut d = Data::new(1);
+        self.tls_session.write_all(&d.as_bytes());
     }
 
     fn print_result(&self, frames: Vec<Frame>) {
@@ -237,7 +231,6 @@ impl Connection {
         if self.h2_session.is_accepted() {
             let frames = codec::parse_frames_from_buffer(&buf);
             self.print_result(frames);
-            self.send_settings_a();
             self.send_response();
         } else {
             if proto::handshake(buf) {  
@@ -248,8 +241,6 @@ impl Connection {
                 self.send_settings_a();
             }
         }
-
-        
     }
 
     // pub fn send_http_response_once(&mut self) {

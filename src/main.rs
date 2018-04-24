@@ -1,17 +1,12 @@
 extern crate bytes;
 extern crate mio;
 extern crate bitreader;
-extern crate hpack;
+extern crate hpack_codec;
 extern crate rustls;
 
 mod proto;
-mod codec;
-mod frame; 
-mod config;
-mod connection;
 mod server;
-mod session;
-mod util;
+use server::config;
 
 use mio::tcp::{TcpListener};
 

@@ -1,4 +1,4 @@
-use frame::head::Head;
+use proto::frame::head::Head;
 
 use bitreader::BitReader;
 

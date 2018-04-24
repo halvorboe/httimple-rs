@@ -1,8 +1,8 @@
 use std;
 use bytes::{Bytes, BytesMut};
-use frame::Frame;
+use proto::frame::Frame;
 use std::io;
-use util;
+use proto::util;
 
 
 pub fn parse_frames_from_buffer(buf: &[u8]) -> Vec<Frame> {

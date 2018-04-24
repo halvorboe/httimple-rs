@@ -1,6 +1,9 @@
+pub mod config;
+mod connection;
+
 use std::sync::Arc;
 use mio;
-use connection::Connection;
+use self::connection::Connection;
 use std::collections::HashMap;
 use mio::tcp::{TcpListener, Shutdown};
 use rustls;
