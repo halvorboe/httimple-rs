@@ -6,7 +6,7 @@ exclude = [
     "main.rs",
 ]
 description = "Simple HTTP2 package 😃"
-license = "MIT License"
+license = "MIT"
 
 [dependencies]
 
