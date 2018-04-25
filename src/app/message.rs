@@ -5,13 +5,23 @@ use rustls::ServerSession;
 use std::io::Write;
 use hpack_codec::Encoder;
 
+///
+/// A response to be sent.
+/// 
+
+
 #[derive(Debug)]
 pub struct Message {
     pub status: u32,
     pub data: Vec<u8>
 }
 
+
 impl Message {
+
+    ///
+    /// Send the response.
+    /// 
 
     pub fn send(&self, session: &mut ServerSession, encoder: &mut Encoder, stream_id: &mut u32) {
         if *stream_id == 0 {
