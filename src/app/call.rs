@@ -3,6 +3,9 @@ use proto::frame::data::Data;
 use proto::frame::headers::Headers;
 use proto::frame::continuation::Continuation;
 
+///
+/// A call from the client
+/// 
 
 #[derive(Debug)]
 pub struct Call {
