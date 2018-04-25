@@ -1,6 +1,5 @@
 
 use bitreader::BitReader;
-use bytes::Bytes; 
 use proto::util;
 
 // Map number to type
@@ -34,8 +33,8 @@ impl Head {
 
     pub fn has_flag(&self, index: u8) -> bool {
         if index < 8 {
-            let filter = (1 << index);
-            (filter  & self.flags) != 0
+            let filter = 1 << index;
+            filter  & self.flags != 0
         } else {
             false
         }

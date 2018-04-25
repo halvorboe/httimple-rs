@@ -14,8 +14,6 @@ use self::priority::Priority;
 use self::continuation::Continuation;
 use self::window_update::WindowUpdate;
 
-pub type Size = u32;
-
 pub const DATA : u8 = 0;
 pub const HEADERS : u8 = 1;
 pub const PRIORITY : u8 = 2;
@@ -39,9 +37,9 @@ pub enum Frame {
 }
 
 impl Frame {
-    pub fn parse(buf: Vec<u8>) -> (Frame, usize) {
+    pub fn parse(buf: &[u8]) -> (Frame, usize, u32) {
         println!("[FRAME] Parsing frame from {} bytes.", buf.len());
-        let head = head::Head::from(buf.clone());
+        let head = head::Head::from(buf.to_vec());
         let data = &buf[9..9 + head.length as usize];
         let frame = {
             match head.kind {
@@ -54,6 +52,18 @@ impl Frame {
                 _ => Frame::Unknown(data.to_vec())
             }
         };
-        (frame, 9 + head.length as usize)
+        (frame, 9 + head.length as usize, head.stream_id)
+    }
+
+    pub fn is_call(&self) -> bool {
+        let frame = self;
+        match frame {
+            &Frame::Data(_) | &Frame::Headers(_) | &Frame::Continuation(_) => {
+                true
+            },
+            _ => {
+                false
+            }
+        }
     }
 }

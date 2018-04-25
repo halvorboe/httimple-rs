@@ -1,27 +1,45 @@
-pub mod config;
+pub mod call;
+pub mod message;
 mod connection;
+mod config;
 
 use std::sync::Arc;
 use mio;
 use self::connection::Connection;
 use std::collections::HashMap;
-use mio::tcp::{TcpListener, Shutdown};
+use mio::tcp::{TcpListener};
 use rustls;
+use self::call::Call;
+use self::message::Message;
+
+use std::net;
+
+type Callback = fn(&Call) -> Message;
+const LISTENER: mio::Token = mio::Token(0);
 
 pub struct Server {
     server: TcpListener,
     connections: HashMap<mio::Token, Connection>,
     next_id: usize,
     tls_config: Arc<rustls::ServerConfig>,
+    handler: HashMap<Vec<u8>, Callback>,
 }
 
 impl Server {
-    pub fn new(server: TcpListener, cfg: Arc<rustls::ServerConfig>) -> Server {
+    pub fn new() -> Server {
+        let mut addr: net::SocketAddr = "0.0.0.0:3000".parse().unwrap();
+        addr.set_port(3000);
+
+        let config = config::make_config();
+
+        let listener = TcpListener::bind(&addr).expect("cannot listen on port");
+
         Server {
-            server: server,
+            server: listener,
             connections: HashMap::new(),
             next_id: 2,
-            tls_config: cfg,
+            tls_config: config,
+            handler: HashMap::new(),
         }
     }
 
@@ -31,11 +49,18 @@ impl Server {
                 println!("Accepting new connection from {:?}", addr);
 
                 let tls_session = rustls::ServerSession::new(&self.tls_config);
+                let handler = self.handler.clone();
+
+                println!("--------------------------X");
+                for (key, _) in &self.handler {
+                    println!("{:?}", String::from_utf8(key.clone()).unwrap());
+                }
+                println!("--------------------------X");
 
                 let token = mio::Token(self.next_id);
                 self.next_id += 1;
 
-                self.connections.insert(token, Connection::new(socket, token, tls_session));
+                self.connections.insert(token, Connection::new(socket, token, tls_session, handler));
                 self.connections[&token].register(poll);
                 true
             }
@@ -60,5 +85,42 @@ impl Server {
             }
         }
     }
+
+    pub fn get(&mut self, path: &'static str, callback: Callback) {
+        self.handler.insert(String::from(path).as_bytes().to_vec(), callback);
+    }
+
+    pub fn go(&mut self) {
+        let mut poll = mio::Poll::new()
+            .unwrap();
+        poll.register(&self.server,
+                    LISTENER,
+                    mio::Ready::readable(),
+                    mio::PollOpt::level())
+            .unwrap();
+        let mut events = mio::Events::with_capacity(256);
+
+        let mut count = 0;
+
+        loop {
+            poll.poll(&mut events, None).unwrap();
+
+            for event in events.iter() {
+                match event.token() {
+                    LISTENER => {
+                        count += 1;
+                        println!("[CONNECTION] {}", count);
+                        if !self.accept(&mut poll) {
+                            break;
+                        }
+                    }
+                    _ => {
+                        self.conn_event(&mut poll, &event)
+                    }
+                }
+            }
+        }
+    } 
+
 }
 

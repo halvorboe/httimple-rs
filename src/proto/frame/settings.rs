@@ -1,13 +1,13 @@
-use proto::frame::{SETTINGS, Size};
+use proto::frame::SETTINGS;
 use proto::frame::Head;
 use bitreader::BitReader;
 
 
-pub const DEFAULT_SETTINGS_HEADER_TABLE_SIZE: Size = 4_096;
-pub const DEFAULT_INITIAL_WINDOW_SIZE: Size = 65_535;
-pub const DEFAULT_MAX_FRAME_SIZE: Size = 16_384;
-pub const MAX_INITIAL_WINDOW_SIZE: Size = (1 << 31) - 1;
-pub const MAX_MAX_FRAME_SIZE: Size = (1 << 24) - 1;
+pub const DEFAULT_SETTINGS_HEADER_TABLE_SIZE: u32 = 4_096;
+pub const DEFAULT_INITIAL_WINDOW_SIZE: u32 = 65_535;
+pub const DEFAULT_MAX_FRAME_SIZE: u32 = 16_384;
+// pub const MAX_INITIAL_WINDOW_SIZE: u32 = (1 << 31) - 1;
+// pub const MAX_MAX_FRAME_SIZE: u32 = (1 << 24) - 1;
 
 #[derive(Debug)]
 pub struct Setting {
@@ -21,6 +21,7 @@ pub struct Settings {
     inner: Vec<Setting>
 }
 
+#[allow(dead_code)]
 impl Settings {
     
     pub fn from(head: Head, buf: Vec<u8>) -> Settings {

@@ -1,6 +1,6 @@
 use rustls;
-use fs;
-use std::io::{Write, Read, BufReader};
+use std::fs;
+use std::io::{Read, BufReader};
 use std::sync::Arc;
 
 fn load_certs(filename: &str) -> Vec<rustls::Certificate> {

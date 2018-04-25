@@ -2,7 +2,6 @@ mod stream;
 
 use self::stream::Stream;
 
-use proto::frame::settings::Setting;
 use std::collections::HashMap;
 
 

@@ -3,18 +3,18 @@ use rustls;
 use rustls::Session;
 use mio;
 use std::io;
+use server::message::Message;
 use std::io::{Read, Write};
 use std::collections::HashMap;
-
 use proto::session;
 use proto;
-use proto::codec;
 use proto::frame::Frame;
-use proto::frame::headers::Headers;
+
+use server::call::Call;
 
 use proto::frame::head::Head;
-use proto::frame::data::Data;
-use proto::frame::settings::Settings;
+
+use server::Callback;
 
 pub struct Connection {
     socket: TcpStream,
@@ -23,122 +23,155 @@ pub struct Connection {
     closed: bool,
     h2_session: session::Session,
     tls_session: rustls::ServerSession,
-    back: Option<TcpStream>,
-    sent_http_response: bool,
-}
-
-/// Open a plaintext TCP-level connection for forwarded connections.
-fn open_back() -> Option<TcpStream> {
-    None
-}
-
-
-/// This used to be conveniently exposed by mio: map EWOULDBLOCK
-/// errors to something less-errory.
-fn try_read(r: io::Result<usize>) -> io::Result<Option<usize>> {
-    match r {
-        Ok(len) => Ok(Some(len)),
-        Err(e) => {
-            if e.kind() == io::ErrorKind::WouldBlock {
-                Ok(None)
-            } else {
-                Err(e)
-            }
-        }
-    }
+    calls: HashMap<u32, Call>,
+    handler: HashMap<Vec<u8>, Callback>
 }
 
 impl Connection {
-    pub fn new(socket: TcpStream,
-           token: mio::Token,
-           tls_session: rustls::ServerSession)
-           -> Connection {
-        let back = open_back();
+
+    pub fn new(socket: TcpStream, token: mio::Token, tls_session: rustls::ServerSession, handler: HashMap<Vec<u8>, Callback>)-> Connection {
         Connection {
             socket: socket,
             token: token,
             closing: false,
             closed: false,
-            h2_session: session::Session { accepted: false, settings: HashMap::new(), streams: HashMap::new() },
+            h2_session: session::Session { 
+                accepted: false, 
+                settings: HashMap::new(), 
+                streams: HashMap::new() 
+            },
             tls_session: tls_session,
-            back: back,
-            sent_http_response: false,
+            calls: HashMap::new(),
+            handler: handler
         }
     }
 
-    /// We're a connection, and we have something to do.
+    pub fn incoming(&mut self, buf: &[u8]) {
+        if !self.h2_session.is_accepted() {
+            if proto::handshake(buf) { 
+                self.h2_session.accept();
+                self.send_settings();
+                self.handle(&buf[24..])
+            } else {
+                return;
+            }
+        } else {
+            self.handle(buf);
+        }
+        
+    }
+
+    pub fn handle(&mut self, buf: &[u8]) {
+        // let frames = codec::parse_frames_from_buffer(&buf);
+        // self.print_result(frames);
+        let mut cursor = 0; 
+        while cursor < buf.len() {
+            let (frame, length, stream_id) = Frame::parse(&buf[cursor..]);
+            cursor += length;
+            if frame.is_call() {
+                self.call(stream_id, frame); // Data, Headers, Caller
+            } else {
+                self.modify(stream_id, frame);
+            }
+        }
+    }
+
+    pub fn call(&mut self, stream_id: u32, frame: Frame) {
+        let call = self.calls.entry(stream_id).or_insert(Call::from());
+        match frame {
+            Frame::Data(data) => {
+                call.insert_data(data);
+            },
+            Frame::Headers(headers) => {
+                call.insert_headers(headers);
+            },
+            Frame::Continuation(continuation) => {
+                call.insert_continuation(continuation);
+            },
+            _ => {}
+        }
+        if call.is_ready() {
+            match call.path() {
+                Some(path) => {
+                    println!("PATH!!! {} ------------------", String::from_utf8(path.clone()).unwrap());
+                    for (key, _) in &self.handler {
+                        println!("{:?}", String::from_utf8(key.clone()).unwrap());
+                    }
+                    let message = match self.handler.get(path) {
+                        Some(callback) => callback(call),
+                        _ => Message::not_found()
+                    };
+                    message.send(&mut self.tls_session);
+                },
+                _ => {
+                     println!("NO PATH!!! ------------------");
+                }
+            }
+        }
+    } 
+
+    pub fn modify(&mut self, stream_id: u32, frame: Frame) {
+        match frame {
+            Frame::Settings(settings) => {
+                println!("{:?}", settings);
+                self.send_settings_a(stream_id);
+            },
+            _ => {}
+        }
+    }
+
     pub fn ready(&mut self, poll: &mut mio::Poll, ev: &mio::Event) {
-        // If we're readable: read some TLS.  Then
-        // see if that yielded new plaintext.  Then
-        // see if the backend is readable too.
-        if ev.readiness().is_readable() {
-            self.do_tls_read();
-            self.try_plain_read();
-            self.try_back_read();
+        if ev.readiness().is_readable() && !self.closing {
+            self.read_tls();
+            self.read();
         }
 
         if ev.readiness().is_writable() {
-            self.do_tls_write();
+            self.write_tls();
         }
 
         if self.closing && !self.tls_session.wants_write() {
             let _ = self.socket.shutdown(Shutdown::Both);
-            self.close_back();
             self.closed = true;
         } else {
             self.reregister(poll);
         }
     }
 
-    /// Close the backend connection for forwarded sessions.
-    pub fn close_back(&mut self) {
-        if self.back.is_some() {
-            let back = self.back.as_mut().unwrap();
-            back.shutdown(Shutdown::Both).unwrap();
-        }
-        self.back = None;
-    }
-
-    pub fn do_tls_read(&mut self) {
-        // Read some TLS data.
+    pub fn read_tls(&mut self) {
         let rc = self.tls_session.read_tls(&mut self.socket);
+
         if rc.is_err() {
             let err = rc.unwrap_err();
-
-            if let io::ErrorKind::WouldBlock = err.kind() {
-                return;
+            if let io::ErrorKind::WouldBlock = err.kind() {} 
+            else {
+                println!("[ERROR] Read error: {:?}", err);
+                self.closing = true;
             }
-
-            println!("read error {:?}", err);
-            self.closing = true;
             return;
         }
 
         if rc.unwrap() == 0 {
-            println!("eof");
+            println!("[ERROR] EOF");
             self.closing = true;
             return;
         }
 
-        // Process newly-received TLS messages.
         let processed = self.tls_session.process_new_packets();
+
         if processed.is_err() {
-            println!("cannot process packet: {:?}", processed);
+            println!("[ERROR] Cannot process packet: {:?}", processed);
             self.closing = true;
             return;
         }
+
     }
 
-    pub fn try_plain_read(&mut self) {
-        // Read and process all available plaintext.
+    pub fn read(&mut self) {
         let mut buf = Vec::new();
 
-        let rc = self.tls_session.read_to_end(&mut buf);
-        // println!("[MESSAGE] {}", String::from_utf8_lossy(&buf).into_owned());
-        if rc.is_err() {
-            println!("plaintext read failed: {:?}", rc);
+        if self.tls_session.read_to_end(&mut buf).is_err() {
             self.closing = true;
-            return;
         }
 
         if !buf.is_empty() {
@@ -146,115 +179,11 @@ impl Connection {
         }
     }
 
-    pub fn try_back_read(&mut self) {
-        if self.back.is_none() {
-            return;
-        }
-
-        // Try a non-blocking read.
-        let mut buf = [0u8; 1024];
-        let back = self.back.as_mut().unwrap();
-        let rc = try_read(back.read(&mut buf));
-
-        if rc.is_err() {
-            println!("backend read failed: {:?}", rc);
-            self.closing = true;
-            return;
-        }
-
-        let maybe_len = rc.unwrap();
-
-        // If we have a successful but empty read, that's an EOF.
-        // Otherwise, we shove the data into the TLS session.
-        match maybe_len {
-            Some(len) if len == 0 => {
-                println!("back eof");
-                self.closing = true;
-            }
-            Some(len) => {
-                self.tls_session.write_all(&buf[..len]).unwrap();
-            }
-            None => {}
-        };
-    }
-
-    fn send_settings(&mut self) {
-        self.send_settings_frame(0);
-    } 
-
-    fn send_settings_a(&mut self) {
-        self.send_settings_frame(1);
-    } 
-
-    fn send_settings_frame(&mut self, flag: u8) {
-        let head = Head {
-            length: 0,
-            kind: 4,
-            flags: flag,
-            stream_id: 0, 
-        };
-        let w = self.tls_session
-            .write_all(&head.as_bytes())
-            .unwrap();
-        println!("SENT SETTINGS {:?}", w);
-    }
-
-
-    fn send_response(&mut self) {
-        let mut headers = Headers::new(1);
-        self.tls_session.write_all(&headers.as_bytes());
-        let mut d = Data::new(1);
-        self.tls_session.write_all(&d.as_bytes());
-    }
-
-    fn print_result(&self, frames: Vec<Frame>) {
-        println!("-- [RESULT] ✅ ----------------");
-        let mut unknown = 0;
-        for frame in frames {
-            match frame {
-                Frame::Unknown(frame) => {
-                    println!("[Unknown]");
-                },
-                _ => {
-                    println!("{:?}", frame);
-                }
-
-            };
-            println!("------------------------------");
-            
-        }
-
-    }
-
-    /// Process some amount of received plaintext.
-    pub fn incoming(&mut self, buf: &[u8]) {
-        if self.h2_session.is_accepted() {
-            let frames = codec::parse_frames_from_buffer(&buf);
-            self.print_result(frames);
-            self.send_response();
-        } else {
-            if proto::handshake(buf) {  
-                self.h2_session.accept();
-                let frames = codec::parse_frames_from_buffer(&buf[24..]);
-                self.print_result(frames);
-                self.send_settings();
-                self.send_settings_a();
-            }
-        }
-    }
-
-    // pub fn send_http_response_once(&mut self) {
-    //     let response = b"HTTP/1.0 200 OK\r\nConnection: close\r\n\r\nHello world from rustls tlsserver\r\n";
-    //     self.tls_session
-    //         .write_all(response)
-    //         .unwrap();
-    //     self.tls_session.send_close_notify();
-    // }
-
-    pub fn do_tls_write(&mut self) {
+    pub fn write_tls(&mut self) {
         let rc = self.tls_session.write_tls(&mut self.socket);
+
         if rc.is_err() {
-            println!("write failed {:?}", rc);
+            // println!("[ERROR] Write failed {:?}", rc);
             self.closing = true;
             return;
         }
@@ -266,14 +195,6 @@ impl Connection {
                       self.event_set(),
                       mio::PollOpt::level() | mio::PollOpt::oneshot())
             .unwrap();
-
-        if self.back.is_some() {
-            poll.register(self.back.as_ref().unwrap(),
-                          self.token,
-                          mio::Ready::readable(),
-                          mio::PollOpt::level() | mio::PollOpt::oneshot())
-                .unwrap();
-        }
     }
 
     pub fn reregister(&self, poll: &mut mio::Poll) {
@@ -282,18 +203,8 @@ impl Connection {
                         self.event_set(),
                         mio::PollOpt::level() | mio::PollOpt::oneshot())
             .unwrap();
-
-        if self.back.is_some() {
-            poll.reregister(self.back.as_ref().unwrap(),
-                            self.token,
-                            mio::Ready::readable(),
-                            mio::PollOpt::level() | mio::PollOpt::oneshot())
-                .unwrap();
-        }
     }
 
-    /// What IO events we're currently waiting for,
-    /// based on wants_read/wants_write.
     pub fn event_set(&self) -> mio::Ready {
         let rd = self.tls_session.wants_read();
         let wr = self.tls_session.wants_write();
@@ -310,4 +221,56 @@ impl Connection {
     pub fn is_closed(&self) -> bool {
         self.closed
     }
+
+    // TEMP
+
+    fn send_settings(&mut self) {
+        self.send_settings_frame(0, 0);
+    } 
+
+    fn send_settings_a(&mut self, stream_id: u32) {
+        self.send_settings_frame(1, stream_id);
+    } 
+
+    fn send_settings_frame(&mut self, flag: u8, stream_id: u32) {
+        let head = Head {
+            length: 0,
+            kind: 4,
+            flags: flag,
+            stream_id: stream_id, 
+        };
+        let w = self.tls_session
+            .write_all(&head.as_bytes())
+            .unwrap();
+        println!("SENT SETTINGS {:?}", w);
+    }
+
+
+    // fn send_response(tls_session: &mut rustls::ServerSession) {
+    //     let mut headers = Headers::new(1);
+    //     tls_session.write_all(&headers.as_bytes());
+    //     let mut d = Data::new(1);
+    //     tls_session.write_all(&d.as_bytes());
+    //     // self.closing = true;
+    // }
+
+    // fn print_result(&self, frames: Vec<Frame>) {
+    //     println!("-- [RESULT] ✅ ----------------");
+    //     let mut unknown = 0;
+    //     for frame in frames {
+    //         match frame {
+    //             Frame::Unknown(frame) => {
+    //                 println!("[Unknown]");
+    //             },
+    //             _ => {
+    //                 println!("{:?}", frame);
+    //             }
+
+    //         };
+    //         println!("------------------------------");
+            
+    //     }
+
+    // }
+
 }

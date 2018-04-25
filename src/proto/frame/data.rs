@@ -17,15 +17,14 @@ impl Data {
 
     pub fn from(head: Head, buf: Vec<u8>) -> Data {
         println!("[DATA] Stated reading data...");
-        let data = Vec::new();
+        let mut data = Vec::new();
         if head.has_flag(3) {   
             let mut reader = BitReader::new(&buf);
             let buffer = reader.read_u32(8).unwrap();
             let to = (head.length - buffer) as usize;
-            let data = buf[1..to].to_vec();
-        } else {
-            let data = buf;
-        }
+            let mut a = buf[1..to].to_vec().clone();
+            data.append(&mut a);
+        } 
         println!("[DATA] Read data 😊");
         Data { head: head, inner: data }
     }
@@ -53,6 +52,14 @@ impl Data {
         //println!("{:?}", head);
         head
     }
+
+    pub fn get_payload(&self) -> Vec<u8> {
+        self.inner.clone()
+    }
+
+    pub fn is_end_stream(&self) -> bool {
+        self.head.has_flag(0)
+    } 
     
 
 }
