@@ -17,6 +17,17 @@ use std::net;
 type Callback = fn(&Call) -> Message;
 const LISTENER: mio::Token = mio::Token(0);
 
+/// 
+/// This is how you use it:
+/// 
+/// ´´´
+/// let mut app = App::new();
+///     app.get("/", | call: &Call | -> Message {
+///         Message::from(file("index.html"))
+///     });
+///     app.start();
+/// ´´´
+/// 
 pub struct App {
     server: TcpListener,
     connections: HashMap<mio::Token, Connection>,
