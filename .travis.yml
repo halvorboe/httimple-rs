@@ -10,7 +10,5 @@ matrix:
   allow_failures:
     - rust: nightly
   fast_finish: true
-after-success: 
- - cargo login $CARGO_TOKEN
- - cargo package 
- - cargo publish
+after-deploy: 
+  cargo publish --token $CARGO_TOKEN
