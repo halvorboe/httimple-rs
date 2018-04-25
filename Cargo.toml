@@ -1,6 +1,6 @@
 [package]
 name = "httimple"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Mona Lisa <halvor98@outlook.com>"]
 exclude = [
     "src/main.rs",
