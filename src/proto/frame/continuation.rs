@@ -1,5 +1,5 @@
 use proto::frame::head::Head;
-use proto::frame::headers::parse_header_block_fragment;
+// use proto::frame::headers::parse_header_block_fragment;
 
 use std::collections::HashMap;
 
@@ -14,7 +14,7 @@ pub struct Continuation {
 impl Continuation {
 
     pub fn from(head: Head, buf: Vec<u8>) -> Continuation {
-        let inner = parse_header_block_fragment(&buf);
+        let inner = HashMap::new();
         Continuation { head: head, inner: inner}
     }
 

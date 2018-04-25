@@ -3,7 +3,7 @@ use proto::frame::data::Data;
 
 use rustls::ServerSession;
 use std::io::Write;
-
+use hpack_codec::Encoder;
 
 #[derive(Debug)]
 pub struct Message {
@@ -13,14 +13,15 @@ pub struct Message {
 
 impl Message {
 
-    pub fn send(&self, session: &mut ServerSession, stream_id: &mut u32) {
+    pub fn send(&self, session: &mut ServerSession, encoder: &mut Encoder, stream_id: &mut u32) {
         if *stream_id == 0 {
             *stream_id += 1;
         }
         println!("[SENDING] Status: {} Stream: {}", self.status, stream_id);
         if self.status == 200 || self.status == 404 {
             let mut headers = Headers::new(*stream_id);
-            session.write_all(&headers.as_bytes()).unwrap();
+            headers.end_headers();
+            session.write_all(&headers.encode(encoder)).unwrap();
             let mut d = Data::new(*stream_id, self.data.clone());
             session.write_all(&d.as_bytes()).unwrap();
         }

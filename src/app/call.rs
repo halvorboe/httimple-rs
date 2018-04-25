@@ -35,7 +35,16 @@ impl Call {
     pub fn insert_headers(&mut self, headers: Headers) {
         self.end_stream = headers.is_end_stream();
         self.end_headers = headers.is_end_headers();
-        self.insert_all(headers.get_headers());
+        match headers.get_headers() {   
+            Some(headers) => {
+                self.insert_all(headers);
+            }, 
+            None => {
+                println!("[ERROR] Headers not decoded...");
+            }
+        }
+            
+
     }
 
     pub fn insert_continuation(&mut self, continuation: Continuation) {

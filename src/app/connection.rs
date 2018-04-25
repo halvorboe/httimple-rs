@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use proto::session;
 use proto;
 use proto::frame::Frame;
-
+use hpack_codec::{Decoder, Encoder};
 use app::call::Call;
 
 use proto::frame::head::Head;
@@ -24,7 +24,9 @@ pub struct Connection {
     h2_session: session::Session,
     tls_session: rustls::ServerSession,
     calls: HashMap<u32, Call>,
-    handler: HashMap<Vec<u8>, Callback>
+    handler: HashMap<Vec<u8>, Callback>,
+    encoder: Encoder, // Needs to implemented for subsequest headers to be 
+    decoder: Decoder  // read propperlyindex.html
 }
 
 impl Connection {
@@ -42,7 +44,9 @@ impl Connection {
             },
             tls_session: tls_session,
             calls: HashMap::new(),
-            handler: handler
+            handler: handler,
+            encoder: Encoder::new(4096),
+            decoder: Decoder::new(4096),
         }
     }
 
@@ -82,7 +86,8 @@ impl Connection {
             Frame::Data(data) => {
                 call.insert_data(data);
             },
-            Frame::Headers(headers) => {
+            Frame::Headers(mut headers) => {
+                headers.decode(&mut self.decoder);
                 call.insert_headers(headers);
             },
             Frame::Continuation(continuation) => {
@@ -102,7 +107,7 @@ impl Connection {
                         _ => Message::not_found()
                     };
                     let mut id = stream_id;
-                    message.send(&mut self.tls_session, &mut id);
+                    message.send(&mut self.tls_session, &mut self.encoder, &mut id);
                 },
                 _ => {
                      println!("NO PATH!!! ------------------");
@@ -184,8 +189,10 @@ impl Connection {
         let rc = self.tls_session.write_tls(&mut self.socket);
 
         if rc.is_err() {
-            // println!("[ERROR] Write failed {:?}", rc);
+            println!("[ERROR] Write failed {:?}", rc);
             self.closing = true;
+            self.tls_session.send_close_notify();
+            let _ = self.socket.shutdown(Shutdown::Both);
             return;
         }
     }
