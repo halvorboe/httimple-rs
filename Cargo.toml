@@ -5,6 +5,8 @@ authors = ["Mona Lisa <halvor98@outlook.com>"]
 exclude = [
     "main.rs",
 ]
+description = "Simple HTTP2 package 😃"
+license = "MIT License"
 
 [dependencies]
 
