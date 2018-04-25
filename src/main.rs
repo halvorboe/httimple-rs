@@ -15,10 +15,10 @@ use app::call::Call;
 use helpers::file;
 
 
-
-
 fn main() {
     let mut app = App::new();
-    app.get("/", | call: &Call | -> Message {Message::from(file("index.html"))});
+    app.get("/", | _call: &Call | -> Message {
+        Message::from(file("index.html"))
+    });
     app.start();
 }

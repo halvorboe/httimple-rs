@@ -14,6 +14,7 @@ pub struct Continuation {
 impl Continuation {
 
     pub fn from(head: Head, buf: Vec<u8>) -> Continuation {
+        println!("{:?}", buf);
         let inner = HashMap::new();
         Continuation { head: head, inner: inner}
     }

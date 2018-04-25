@@ -95,10 +95,6 @@ impl Headers {
         Headers { head: Head { length: 0, kind: HEADERS, flags: 0, stream_id: stream_id }, inner: HeaderBlock::Uncompressed(data)}
     }
 
-    // pub fn as_bytes(&mut self) -> Vec<u8> {
-    //     
-    // }
-
     pub fn is_end_stream(&self) -> bool {
         self.head.has_flag(0)
     } 
@@ -128,38 +124,38 @@ impl Headers {
     } 
 }
 
-pub fn create_header_block_fragment(headers: HashMap<Vec<u8>, Vec<u8>>) -> Vec<u8> {
+// pub fn create_header_block_fragment(headers: HashMap<Vec<u8>, Vec<u8>>) -> Vec<u8> {
 
-    println!("{:?}", headers);
+//     println!("{:?}", headers);
 
-    let mut encoder = Encoder::new(4096); // Should not be a new encoder 
+//     let mut encoder = Encoder::new(4096); // Should not be a new encoder 
 
-    let mut header = encoder.enter_header_block(Vec::new()).unwrap();
-    header.encode_field(StaticEntry::Status200).unwrap(); // ContentLength
+//     let mut header = encoder.enter_header_block(Vec::new()).unwrap();
+//     header.encode_field(StaticEntry::Status200).unwrap(); // ContentLength
 
-    header.finish()
-}
+//     header.finish()
+// }
 
 // Write test to check that this works
 // use hpack_codec::{Encoder, Decoder};
 
-#[test] 
+// #[test] 
 
-fn do_hpack() {
-    // Encoding
-    let mut encoder = Encoder::new(4096);
-    let mut header = encoder.enter_header_block(Vec::new()).unwrap();
-    header.encode_field(StaticEntry::MethodGet).unwrap();
-    header.encode_field(Field::with_indexed_name(StaticEntry::Path, b"/hello")).unwrap();
-    header.encode_field(Field::new(b"foo", b"bar").with_indexing()).unwrap();
-    header.encode_field(Index::dynamic_table_offset() + 0).unwrap();
-    let encoded_data = header.finish();
+// fn do_hpack() {
+//     // Encoding
+//     let mut encoder = Encoder::new(4096);
+//     let mut header = encoder.enter_header_block(Vec::new()).unwrap();
+//     header.encode_field(StaticEntry::MethodGet).unwrap();
+//     header.encode_field(Field::with_indexed_name(StaticEntry::Path, b"/hello")).unwrap();
+//     header.encode_field(Field::new(b"foo", b"bar").with_indexing()).unwrap();
+//     header.encode_field(Index::dynamic_table_offset() + 0).unwrap();
+//     let encoded_data = header.finish();
 
-    // Decoding
-    let mut decoder = Decoder::new(4096);
-    let mut header = decoder.enter_header_block(&encoded_data[..]).unwrap();
-    assert_eq!(header.decode_field().unwrap(), HeaderField::new(b":method", b"GET").ok());
-    assert_eq!(header.decode_field().unwrap(), HeaderField::new(b":path", b"/hello").ok());
-    assert_eq!(header.decode_field().unwrap(), HeaderField::new(b"foo", b"bar").ok());
-    assert_eq!(header.decode_field().unwrap(), HeaderField::new(b"foo", b"bar").ok());
-}
+//     // Decoding
+//     let mut decoder = Decoder::new(4096);
+//     let mut header = decoder.enter_header_block(&encoded_data[..]).unwrap();
+//     assert_eq!(header.decode_field().unwrap(), HeaderField::new(b":method", b"GET").ok());
+//     assert_eq!(header.decode_field().unwrap(), HeaderField::new(b":path", b"/hello").ok());
+//     assert_eq!(header.decode_field().unwrap(), HeaderField::new(b"foo", b"bar").ok());
+//     assert_eq!(header.decode_field().unwrap(), HeaderField::new(b"foo", b"bar").ok());
+// }
