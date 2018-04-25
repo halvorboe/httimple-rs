@@ -1,4 +1,4 @@
-# httimple.rs [![Build Status](https://travis-ci.org/halvorboe/httimple-rs.svg?branch=master)](https://travis-ci.org/halvorboe/httimple.rs)![Build Status](https://img.shields.io/crates/d/rustc-serialize.svg)
+# httimple.rs [![Build Status](https://travis-ci.org/halvorboe/httimple-rs.svg?branch=master)](https://travis-ci.org/halvorboe/httimple.rs) ![Version](https://img.shields.io/crates/dv/httimple.svg) ![Downloads](https://img.shields.io/crates/d/httimple.svg)
 Simple HTTP 2.0 library for building APIs
 
 
