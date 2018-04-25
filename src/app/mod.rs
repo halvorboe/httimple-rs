@@ -17,7 +17,7 @@ use std::net;
 type Callback = fn(&Call) -> Message;
 const LISTENER: mio::Token = mio::Token(0);
 
-pub struct Server {
+pub struct App {
     server: TcpListener,
     connections: HashMap<mio::Token, Connection>,
     next_id: usize,
@@ -25,8 +25,8 @@ pub struct Server {
     handler: HashMap<Vec<u8>, Callback>,
 }
 
-impl Server {
-    pub fn new() -> Server {
+impl App {
+    pub fn new() -> App {
         let mut addr: net::SocketAddr = "0.0.0.0:3000".parse().unwrap();
         addr.set_port(3000);
 
@@ -34,7 +34,7 @@ impl Server {
 
         let listener = TcpListener::bind(&addr).expect("cannot listen on port");
 
-        Server {
+        App {
             server: listener,
             connections: HashMap::new(),
             next_id: 2,
@@ -90,7 +90,7 @@ impl Server {
         self.handler.insert(String::from(path).as_bytes().to_vec(), callback);
     }
 
-    pub fn go(&mut self) {
+    pub fn start(&mut self) {
         let mut poll = mio::Poll::new()
             .unwrap();
         poll.register(&self.server,

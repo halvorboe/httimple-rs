@@ -5,22 +5,20 @@ extern crate hpack_codec;
 extern crate rustls;
 
 mod proto;
-mod server;
+mod app;
 
-use server::Server;
+use app::App;
 
-use server::message::Message;
-use server::call::Call;
+use app::message::Message;
+use app::call::Call;
 
 fn main() {
-    let mut serv = Server::new();
-
-    fn callback(call: &Call) -> Message {
+    let mut app = App::new();
+    
+    app.get("/", | call: &Call | -> Message {
         println!("I DID NOTHING WRONG! {:?}", call);
         Message { status: 200 }
-    }
-    
-    serv.get("/", callback);
+    });
 
-    serv.go();
+    app.start();
 }

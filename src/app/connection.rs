@@ -3,18 +3,18 @@ use rustls;
 use rustls::Session;
 use mio;
 use std::io;
-use server::message::Message;
+use app::message::Message;
 use std::io::{Read, Write};
 use std::collections::HashMap;
 use proto::session;
 use proto;
 use proto::frame::Frame;
 
-use server::call::Call;
+use app::call::Call;
 
 use proto::frame::head::Head;
 
-use server::Callback;
+use app::Callback;
 
 pub struct Connection {
     socket: TcpStream,
@@ -101,7 +101,8 @@ impl Connection {
                         Some(callback) => callback(call),
                         _ => Message::not_found()
                     };
-                    message.send(&mut self.tls_session);
+                    let mut id = stream_id;
+                    message.send(&mut self.tls_session, &mut id);
                 },
                 _ => {
                      println!("NO PATH!!! ------------------");
