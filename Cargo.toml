@@ -1,9 +1,9 @@
 [package]
 name = "httimple"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Mona Lisa <halvor98@outlook.com>"]
 exclude = [
-    "main.rs",
+    "src/main.rs",
 ]
 description = "Simple HTTP2 package 😃"
 license = "MIT"
