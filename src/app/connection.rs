@@ -246,32 +246,4 @@ impl Connection {
         println!("SENT SETTINGS {:?}", w);
     }
 
-
-    // fn send_response(tls_session: &mut rustls::ServerSession) {
-    //     let mut headers = Headers::new(1);
-    //     tls_session.write_all(&headers.as_bytes());
-    //     let mut d = Data::new(1);
-    //     tls_session.write_all(&d.as_bytes());
-    //     // self.closing = true;
-    // }
-
-    // fn print_result(&self, frames: Vec<Frame>) {
-    //     println!("-- [RESULT] ✅ ----------------");
-    //     let mut unknown = 0;
-    //     for frame in frames {
-    //         match frame {
-    //             Frame::Unknown(frame) => {
-    //                 println!("[Unknown]");
-    //             },
-    //             _ => {
-    //                 println!("{:?}", frame);
-    //             }
-
-    //         };
-    //         println!("------------------------------");
-            
-    //     }
-
-    // }
-
 }

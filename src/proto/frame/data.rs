@@ -3,10 +3,6 @@
 use proto::frame::head::Head;
 use bitreader::BitReader;
 
-// Debug only 
-use std::io::prelude::*;
-use std::fs::File;
-
 #[derive(Debug)]
 pub struct Data {
     head: Head,
@@ -29,15 +25,12 @@ impl Data {
         Data { head: head, inner: data }
     }
 
-    pub fn new(stream_id: u32) -> Data {
-        let mut f = File::open("index.html").unwrap();
-        let mut buffer = String::new();
-        f.read_to_string(&mut buffer).unwrap();
+    pub fn new(stream_id: u32, data: Vec<u8>) -> Data {
         Data { 
-            head: Head { length: 0, kind: 0, flags: 0, stream_id: stream_id
-            },
+            head: 
+                Head { length: 0, kind: 0, flags: 0, stream_id: stream_id},
             inner: {
-                buffer.as_bytes().to_vec()
+                data
             }
         }
     } 
