@@ -20,13 +20,16 @@ const LISTENER: mio::Token = mio::Token(0);
 /// 
 /// This is how you use it:
 /// 
-/// ```
+/// use httimple::app::App;
+/// use httimple::app::call::Call;
+/// use httimple::app::message::Message;
+/// use httimple::helpers::file;
+/// 
 /// let mut app = App::new();
 /// app.serve("/", | call: &Call | -> Message {
 ///   Message::from(file("index.html"))
 /// });
 /// app.start();
-/// ```
 /// 
 pub struct App {
     server: TcpListener,
