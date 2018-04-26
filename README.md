@@ -1,4 +1,5 @@
-# httimple.rs [![Build Status](https://travis-ci.org/halvorboe/httimple-rs.svg?branch=master)](https://travis-ci.org/halvorboe/httimple-rs) [![Version](https://img.shields.io/crates/v/httimple.svg)] (https://crates.io/crates/httimple) [![Downloads](https://img.shields.io/crates/d/httimple.svg)] (https://crates.io/crates/httimple) 
+# httimple.rs 
+[![Build Status](https://travis-ci.org/halvorboe/httimple-rs.svg?branch=master)](https://travis-ci.org/halvorboe/httimple-rs) [![Version](https://img.shields.io/crates/v/httimple.svg)](https://crates.io/crates/httimple) [![Downloads](https://img.shields.io/crates/d/httimple.svg)](https://crates.io/crates/httimple) 
 Simple HTTP 2.0 library 
 
 
