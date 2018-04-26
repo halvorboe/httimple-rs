@@ -1,0 +1,1 @@
+{"rustc":13965331629215143179,"features":"[\"OSX_10_8\"]","target":4517400442397572839,"profile":10983917318202942317,"path":14173518339143342027,"deps":[["core-foundation-sys v0.2.3",14255451101358657524],["libc v0.2.40",10881308277717191671]],"local":[{"Precalculated":"0.1.16"}],"rustflags":["--error-format=json"]}
