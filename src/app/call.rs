@@ -17,6 +17,10 @@ pub struct Call {
 
 impl Call {
 
+    ///
+    /// Used internally
+    /// 
+
     pub fn from() -> Call {
         Call { 
             headers: HashMap::new(),
@@ -26,14 +30,30 @@ impl Call {
         }
     }
 
+    ///
+    /// Used internally
+    /// 
+
     pub fn is_ready(&self) -> bool {
         self.end_headers && self.end_stream
     }
+
+
+    ///
+    /// Used internally
+    /// 
+
 
     pub fn insert_data(&mut self, data: Data) {
         self.end_stream = data.is_end_stream();
         self.data.append(&mut data.get_payload());
     }
+
+
+    ///
+    /// Used internally
+    /// 
+
 
     pub fn insert_headers(&mut self, headers: Headers) {
         self.end_stream = headers.is_end_stream();
@@ -46,14 +66,23 @@ impl Call {
                 println!("[ERROR] Headers not decoded...");
             }
         }
-            
-
     }
+
+
+    ///
+    /// Used internally
+    /// 
+
 
     pub fn insert_continuation(&mut self, continuation: Continuation) {
         self.end_headers = continuation.is_end_headers();
         self.insert_all(continuation.get_headers());
     }
+
+
+    ///
+    /// Gets the path from the call.
+    /// 
 
     pub fn path(&self) -> Option<&Vec<u8>> {
         for (key, value) in &self.headers {
@@ -69,6 +98,34 @@ impl Call {
         for (key, value) in &headers {
             self.headers.insert(key.clone(), value.clone());
         }
+    }
+
+
+    ///
+    /// Gets the method from the call
+    /// 
+
+
+    pub fn method(&self) -> String {
+        String::from_utf8(self.headers.get(String::from(":method").as_bytes()).unwrap().clone()).unwrap()
+    }
+
+
+    ///
+    /// Checks if the call is of the type GET
+    /// 
+
+    pub fn is_get(&self) -> bool {
+        self.method() == String::from("GET")
+    }
+
+    ///
+    /// Checks if the call is of the type POST
+    /// 
+
+
+    pub fn is_post(&self) -> bool {
+        self.method() == String::from("POST")
     }
 
 

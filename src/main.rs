@@ -17,8 +17,12 @@ use helpers::file;
 
 fn main() {
     let mut app = App::new();
-    app.get("/", | _call: &Call | -> Message {
-        Message::from(file("index.html"))
+    app.serve("/", | call: &Call | -> Message {
+        if call.is_get() {
+            Message::from(file("i.html"))
+        } else {
+            Message::from(file("index.html"))
+        }
     });
     app.start();
 }

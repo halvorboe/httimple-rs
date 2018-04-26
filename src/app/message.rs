@@ -37,9 +37,19 @@ impl Message {
         }
     } 
 
+    ///
+    /// Generates a message from the data supplied
+    /// 
+
+
     pub fn from(data: Vec<u8>) -> Message {
         Message { status: 200, data: data }
     }
+
+    ///
+    /// Generates a 404 - PAGE NOT FOUND request.
+    /// 
+
 
     pub fn not_found() -> Message {
         Message { status: 404, data: String::from("<h1>PAGE NOT FOUND</h1>").as_bytes().to_vec() }

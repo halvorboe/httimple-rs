@@ -22,7 +22,7 @@ const LISTENER: mio::Token = mio::Token(0);
 /// 
 /// ´´´
 /// let mut app = App::new();
-///     app.get("/", | call: &Call | -> Message {
+///     app.serve("/", | call: &Call | -> Message {
 ///         Message::from(file("index.html"))
 ///     });
 ///     app.start();
@@ -97,7 +97,7 @@ impl App {
         }
     }
 
-    pub fn get(&mut self, path: &'static str, callback: Callback) {
+    pub fn serve(&mut self, path: &'static str, callback: Callback) {
         self.handler.insert(String::from(path).as_bytes().to_vec(), callback);
     }
 
