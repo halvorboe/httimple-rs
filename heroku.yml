@@ -1,2 +1,7 @@
+build:
+  languages:
+    - rust
+  packages:
+    - https://github.com/emk/heroku-buildpack-rust.git
 run:
   web: cargo run --release
