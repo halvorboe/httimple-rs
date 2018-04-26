@@ -38,9 +38,11 @@ pub struct App {
 
 impl App {
     pub fn new() -> App {
+        println!("[SETUP] Setting up socket...");
         let mut addr: net::SocketAddr = "0.0.0.0:3000".parse().unwrap();
         addr.set_port(3000);
 
+        println!("[SETUP] Getting config...");
         let config = config::make_config();
 
         let listener = TcpListener::bind(&addr).expect("cannot listen on port");
@@ -54,7 +56,7 @@ impl App {
         }
     }
 
-    pub fn accept(&mut self, poll: &mut mio::Poll) -> bool {
+    fn accept(&mut self, poll: &mut mio::Poll) -> bool {
         match self.server.accept() {
             Ok((socket, addr)) => {
                 println!("Accepting new connection from {:?}", addr);
@@ -82,7 +84,7 @@ impl App {
         }
     }
 
-    pub fn conn_event(&mut self, poll: &mut mio::Poll, event: &mio::Event) {
+    fn conn_event(&mut self, poll: &mut mio::Poll, event: &mio::Event) {
         let token = event.token();
 
         if self.connections.contains_key(&token) {
@@ -97,11 +99,22 @@ impl App {
         }
     }
 
+    ///
+    /// Routes calls comming from that path to that function.
+    /// 
+
     pub fn serve(&mut self, path: &'static str, callback: Callback) {
         self.handler.insert(String::from(path).as_bytes().to_vec(), callback);
     }
 
+    ///
+    /// Boot up the server
+    /// 
+
     pub fn start(&mut self) {
+
+        println!("[BOOT] Server started 😄");
+
         let mut poll = mio::Poll::new()
             .unwrap();
         poll.register(&self.server,
