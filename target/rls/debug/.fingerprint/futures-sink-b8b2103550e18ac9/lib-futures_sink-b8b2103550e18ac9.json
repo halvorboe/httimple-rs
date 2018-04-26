@@ -1,1 +1,0 @@
-{"rustc":13965331629215143179,"features":"[\"futures-channel\", \"futures-core\", \"std\"]","target":3706277572044090642,"profile":10983917318202942317,"path":9536095660648415904,"deps":[["futures-channel v0.2.0",9389945310284364693],["futures-core v0.2.0",3712060420693104607]],"local":[{"Precalculated":"0.2.0"}],"rustflags":["--error-format=json"]}

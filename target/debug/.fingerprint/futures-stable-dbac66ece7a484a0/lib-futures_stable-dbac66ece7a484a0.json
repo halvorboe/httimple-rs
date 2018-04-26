@@ -1,0 +1,1 @@
+{"rustc":13965331629215143179,"features":"[\"futures-core\", \"futures-executor\", \"std\"]","target":7039944794275765491,"profile":4513376542218014594,"path":9969206647181011010,"deps":[["futures-core v0.2.0",4580432148507540817],["futures-executor v0.2.0",13827957500415564795]],"local":[{"Precalculated":"0.2.0"}],"rustflags":[]}

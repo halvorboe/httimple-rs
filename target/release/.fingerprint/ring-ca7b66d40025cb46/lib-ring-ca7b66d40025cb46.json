@@ -1,1 +1,0 @@
-{"rustc":13965331629215143179,"features":"[\"default\", \"dev_urandom_fallback\", \"rsa_signing\", \"use_heap\"]","target":16890545868236013935,"profile":1821645278138830359,"path":10927260040381985867,"deps":[["libc v0.2.40",848806060988382245],["untrusted v0.6.1",11727449205511353653]],"local":[{"Precalculated":"0.13.0-alpha"}],"rustflags":[]}
