@@ -20,13 +20,13 @@ const LISTENER: mio::Token = mio::Token(0);
 /// 
 /// This is how you use it:
 /// 
-/// ´´´
+/// ```
 /// let mut app = App::new();
-///     app.serve("/", | call: &Call | -> Message {
-///         Message::from(file("index.html"))
-///     });
-///     app.start();
-/// ´´´
+/// app.serve("/", | call: &Call | -> Message {
+///   Message::from(file("index.html"))
+/// });
+/// app.start();
+/// ```
 /// 
 pub struct App {
     server: TcpListener,
@@ -40,7 +40,17 @@ impl App {
     pub fn new() -> App {
         println!("[SETUP] Setting up socket...");
         let mut addr: net::SocketAddr = "0.0.0.0:3000".parse().unwrap();
-        addr.set_port(3000);
+        use std::env;
+
+        let key = "PORT";
+        match env::var(key) {
+            Ok(val) => addr.set_port(val.parse().unwrap()),
+            Err(_) => {
+                addr.set_port(3000);
+                println!("Failed to find port");
+            }
+        }
+        
 
         println!("[SETUP] Getting config...");
         let config = config::make_config();
