@@ -76,8 +76,11 @@ cargo run --release
 ### Dependecies
 
 bitreader -> Handles the reading of blocks. Could be removed in favor of binary operations, but it makes the code easier to read.
+
 mio = "0.6.14" -> Handles the async io.
+
 rustls = "0.12.0" -> TLS
+
 hpack_codec = "0.1.0" -> Handles decoding and encoding of headers. Seems broken to some degree.
 
 ### Tests 
