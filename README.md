@@ -1,5 +1,5 @@
 # httimple.rs [![Build Status](https://travis-ci.org/halvorboe/httimple-rs.svg?branch=master)](https://travis-ci.org/halvorboe/httimple-rs) ![Version](https://img.shields.io/crates/v/httimple.svg) ![Downloads](https://img.shields.io/crates/d/httimple.svg)
-Simple HTTP 2.0 library for building APIs
+Simple HTTP 2.0 library 
 
 
 ### Introduction 
@@ -10,7 +10,8 @@ Httiple aims to make HTTP/2 over TLS in rust simple. It adopts a Express-like in
 
 - A basic implementation of the h2 standard. 
 - A per stream state based handler.
-- Different methods 
+- A simple interface.
+- Continous Deployment (deploys to crates.io)
 
 ### Working on 
 
@@ -21,6 +22,9 @@ Httiple aims to make HTTP/2 over TLS in rust simple. It adopts a Express-like in
 - Make the callback a future.
 - Implement a propper hpack lib in rust (the one used currently seems a bit broken)
 - Serving static files (started, but currently impossible to make multiple requests)
+- Write tests for everything. My testing library I was working around does not have TLS support.
+- Improve tls setup process.
+- Adding an ORM and mongodb (a lot of this is done in https://github.com/halvorboe/rust-rest) to possible make it more like Django Framework.
 
 ### Get started
 
@@ -41,7 +45,7 @@ httimple = "*"
 ```
 ##### 5. Write the code
 Make a file containing this and name it main.rs.
-```
+```rust
 extern crate httimple;
 
 use httimple::app::App;
@@ -66,3 +70,19 @@ cargo run --release
 ```
 
 
+### Dependecies
+
+bitreader -> Handles the reading of blocks. Could be removed in favor of binary operations, but it makes the code easier to read.
+mio = "0.6.14" -> Handles the async io.
+rustls = "0.12.0" -> TLS
+hpack_codec = "0.1.0" -> Handles decoding and encoding of headers. Seems broken to some degree.
+
+### Tests 
+
+To run the tests, clone this repo and run:
+```
+cargo test
+```
+
+### Documentation 
+https://docs.rs/httimple/0.1.7/httimple/
